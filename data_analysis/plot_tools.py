@@ -1,12 +1,11 @@
-from pathlib import Path
-from typing import Union
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from pathlib import Path
 from scipy.stats import ranksums
 from statannotations.Annotator import Annotator
+from typing import Union
 
 def significance_level(p_value: float) -> str:
     if p_value < 0.0001:
