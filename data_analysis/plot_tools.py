@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib_venn import venn3
 from pathlib import Path
 from scipy.stats import ranksums
 from statannotations.Annotator import Annotator
@@ -41,6 +42,29 @@ def plot_count_per_perturbation(count_d: dict[int, set[str]],
     plt.xlabel('Number of perturbations in which a phosphosite is detected')
     plt.ylabel('Count of phosphosites')
     plt.title(title)
+    plt.savefig(outPath, format=fmt, dpi=300)
+    plt.close()
+
+def plot_reg_overlap(cond: set[str], 
+                     univ: set[str], 
+                     reg: set[str],
+                     outPath: Union[str, Path], 
+                     fmt: str) -> None:
+    '''
+    Generate a Venn diagram for conditional, universal, and regulated phosphosites. 
+
+    Args:
+        cond (set[str]): Set of conditional phosphosites. 
+        univ (set[str]): Set of universal phosphosites. 
+        reg (set[str]): Set of regulated phosphosites. 
+
+    Returns:
+        None
+    '''
+    venn3([cond, univ, reg], 
+          set_labels=('Conditional p-sites', 'Universal p-sites', 'Regulated p-sites'), 
+          set_colors=('orange', 'blue', 'red'), alpha=0.7)
+    plt.title("Overlap between conditional, universal, and regulated p-sites")
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
 

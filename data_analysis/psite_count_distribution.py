@@ -1,4 +1,8 @@
-# Plot Figures 1A and 1B
+'''
+Plot distribution of count of p-sites against the number of perturbations in which 
+they are detected. 
+Correspond to Figures 1A and 1B
+'''
 
 import os
 import pickle
