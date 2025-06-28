@@ -114,6 +114,11 @@ def plot_comparison_ConSurf(consurf_1: list[float],
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
 
+def bootstrap_se(data, n_bootstrap=1000):
+    medians = [np.median(np.random.choice(data, size=len(data), replace=True))
+               for _ in range(n_bootstrap)]
+    return np.std(medians)
+
 def plot_consurf_distribution(data_lists: list[list[float]], 
                               group_names: list[str], 
                               outPath: Union[str, Path], 
@@ -154,11 +159,6 @@ def plot_consurf_distribution(data_lists: list[list[float]],
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
 
-def bootstrap_se(data, n_bootstrap=1000):
-    medians = [np.median(np.random.choice(data, size=len(data), replace=True))
-               for _ in range(n_bootstrap)]
-    return np.std(medians)
-
 def plot_consurf_difference(data_lists: list[list[float]], 
                             group_names: list[str], 
                             outPath: Union[str, Path], 
@@ -189,6 +189,39 @@ def plot_consurf_difference(data_lists: list[list[float]],
     ax.set_xticklabels(group_names)
     ax.set_ylabel("Median of difference in ConSurf score between\nadjacent residues and p-site")
     ax.set_title("Difference in ConSurf score between adjacent residues and p-site")
+    # plt.tight_layout()
+    plt.savefig(outPath, format=fmt, dpi=300)
+    plt.close()
+
+def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]], 
+                                                    group_names: list[str], 
+                                                    outPath: Union[str, Path], 
+                                                    fmt: str) -> None:
+    '''
+    Plot distribution of ConSurf score against the number of perturbations. 
+    Perturbation bins: 1, 2-4, 5-7, 8-10
+
+    Args: 
+        references (set[str]): Set of references. 
+        consurf (dict[str, dict[int, float]]): ConSurf dictionary. 
+        outPath (Union[str, Path]): Path to output file. 
+        fmt (str): Format of the output file. 
+    
+    Returns:
+        None
+    '''
+    medians = [np.median(d) for d in data_lists]
+    ses = [bootstrap_se(d) for d in data_lists]
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    x_pos = np.arange(len(data_lists))
+
+    ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(group_names)
+    ax.set_ylabel("Median ConSurf score")
+    ax.set_title("Distribution of ConSurf score against number of perturbations")
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
