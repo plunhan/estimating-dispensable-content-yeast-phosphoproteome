@@ -1,3 +1,4 @@
+import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -167,16 +168,39 @@ def melt_data(data, group_labels, ylabel):
     group_column = [label for label, group in zip(group_labels, data) for _ in group]
     return pd.DataFrame({'Group': group_column, ylabel: flat_values})
 
-def plot_figure2b(ax, data, title, pairs, labels, ylabel):
-    df = melt_data(data, labels, ylabel)
-    sns.boxplot(x='Group', y=ylabel, data=df, ax=ax, showfliers=False)
-    ax.set_title(title)
+def bootstrap_se(data, n_bootstrap=1000):
+    medians = [np.median(np.random.choice(data, size=len(data), replace=True))
+               for _ in range(n_bootstrap)]
+    return np.std(medians)
 
-    # max_value = df['Value'].max()
-    # y_max = max_value + 0.3 * (max_value - df['Value'].min())
-    # ax.set_ylim(top=y_max)
-    ax.set_ylim(bottom=df[ylabel].min()+0.5)
-    
-    annotator = Annotator(ax, pairs, data=df, x='Group', y=ylabel)
-    annotator.configure(test='Mann-Whitney', text_format='star', loc='inside')
-    annotator.apply_and_annotate()
+def plot_consurf_difference(data_lists: list[list[float]], 
+                            group_names: list[str], 
+                            outPath: Union[str, Path], 
+                            fmt: str) -> None:
+
+    medians = [-np.median(d) for d in data_lists]
+    ses = [bootstrap_se(d) for d in data_lists]
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    x_pos = np.arange(len(data_lists))
+
+    ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
+
+    pairs = list(itertools.combinations(range(len(data_lists)), 2))
+    height_buffer = max(medians) + max(ses) * 1.5
+    step = max(ses) * 2
+    for i, (i1, i2) in enumerate(pairs):
+        stat, pvalue = ranksums(data_lists[i1], data_lists[i2])
+        sig = significance_level(pvalue)
+        y = height_buffer + i * step
+        x1, x2 = x_pos[i1], x_pos[i2]
+        ax.plot([x1, x1, x2, x2], [y, y + 0.02, y + 0.02, y], lw=1.2, c='black')
+        ax.text((x1 + x2) / 2, y + 0.025, sig, ha='center', va='bottom', fontsize=10)
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(group_names)
+    ax.set_ylabel("Median of difference in ConSurf score between\nadjacent residues and p-site")
+    ax.set_title("Difference in ConSurf score between adjacent residues and p-site")
+    # plt.tight_layout()
+    plt.savefig(outPath, format=fmt, dpi=300)
+    plt.close()
