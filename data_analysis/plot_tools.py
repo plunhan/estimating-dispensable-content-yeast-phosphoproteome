@@ -123,6 +123,7 @@ def plot_consurf_distribution(data_lists: list[list[float]],
                               group_names: list[str], 
                               outPath: Union[str, Path], 
                               fmt: str, 
+                              title: str,
                               urge_positive=False) -> None:
 
     medians = [np.median(d) for d in data_lists]
@@ -154,7 +155,54 @@ def plot_consurf_distribution(data_lists: list[list[float]],
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
     ax.set_ylabel("Median ConSurf score")
-    ax.set_title("Comparison of median ConSurf score")
+    ax.set_title(f"Comparison of median ConSurf score in {title} regions")
+    # plt.tight_layout()
+    plt.savefig(outPath, format=fmt, dpi=300)
+    plt.close()
+
+def plot_consurf_distribution_separate(data_lists: list[list[float]], 
+                                       group_names: list[str], 
+                                       outPath: Union[str, Path], 
+                                       fmt: str, 
+                                       title: str,
+                                       residue: str,
+                                       urge_positive=False) -> None:
+    medians = [np.median(d) for d in data_lists]
+    ses = [bootstrap_se(d) for d in data_lists]
+
+    fig, ax = plt.subplots(figsize=(6, 3))
+    x_pos = np.arange(len(data_lists))
+
+    ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
+
+    pairs = [(0, 1), (1, 2), (0, 2)]
+    if urge_positive:
+        height_buffer = 0.1
+    else:
+        height_buffer = max(medians) + max(ses) * 1.5
+
+    if residue == 'S':
+        step = max(ses) * 1.5
+        ax.set_ylim(0, 0.5)
+    elif residue == 'T':
+        step = 0.1
+        ax.set_ylim(0, 1.0)
+    for i, (i1, i2) in enumerate(pairs):
+        stat, pvalue = ranksums(data_lists[i1], data_lists[i2])
+        sig = significance_level(pvalue)
+        y = height_buffer
+        if i == 2: 
+            y = height_buffer + step
+        x1, x2 = x_pos[i1], x_pos[i2]
+        ax.plot([x1+0.02, x1+0.02, x2-0.02, x2-0.02], [y, y + 0.02, y + 0.02, y], lw=1.2, c='black')
+        ax.text((x1 + x2) / 2, y + 0.025, sig, ha='center', va='bottom', fontsize=10)
+
+    if urge_positive: 
+        ax.axhline(0, color='black', linestyle='-', linewidth=1)
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(group_names)
+    ax.set_ylabel("Median ConSurf score")
+    ax.set_title(title)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
@@ -224,4 +272,34 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
     ax.set_title("Distribution of ConSurf score against number of perturbations")
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
+    plt.close()
+
+def plot_consurf_exposure(df: pd.DataFrame, 
+                          outPath: Union[str, Path], 
+                          figFmt: str) -> None:
+    sns.set(style="whitegrid")
+    plt.figure(figsize=(6, 5))
+    ax = sns.barplot(
+        data=df, 
+        x='Exposure', 
+        y='Median',
+        hue='Type', 
+        palette='Set2',
+        capsize=0.1, 
+        errcolor='black',
+        errwidth=1,
+        ci=None
+    )
+
+    for bar, (_, row) in zip(ax.patches, df.iterrows()):
+        x = bar.get_x() + bar.get_width() / 2
+        y = bar.get_height()
+        ax.errorbar(x, y, yerr=row['Standard error'], fmt='none', ecolor='black', capsize=5, elinewidth=1)
+
+    ax.set_title("Distribution of evolutionary conservation for residues with different exposure")
+    ax.set_xlabel("Residue exposure")
+    ax.set_ylabel("Median ConSurf score")
+    plt.legend(title="Residue type")
+    plt.savefig(outPath, dpi=300, format=figFmt)
+    print('Finished')
     plt.close()

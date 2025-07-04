@@ -25,7 +25,7 @@ from proteomic_tools import (parse_ultradeep,
 
 def main():
 
-    dataDir = Path('../data')
+    dataDir = Path('../../data')
 
     extDir = dataDir / 'external'
 
@@ -64,7 +64,8 @@ def main():
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
     funcPhosPKL = paperDir / 'funcPhos.pkl'
-    lanzPKL = paperDir / 'lanz.pkl'
+    lanz70PKL = paperDir / 'lanz70.pkl'
+    lanz90PKL = paperDir / 'lanz90.pkl'
     regPhosPKL = paperDir / 'reguPhos.pkl'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
@@ -102,13 +103,21 @@ def main():
         funcPhos = parse_functional_phosphosites(funcPhosFile, IDMappingDict2)
         pickle.dump(funcPhos, open(funcPhosPKL, 'wb'))
 
-    if not lanzPKL.is_file():
+    if not lanz70PKL.is_file():
         if not sequencePKL.is_file():
             sequences = parse_fasta(sequenceFile)
             pickle.dump(sequences, open(sequencePKL, 'wb'))
         sequences = pickle.load(open(sequencePKL, 'rb'))
-        lanz = parse_lanz(lanzFile, sequences)
-        pickle.dump(lanz, open(lanzPKL, 'wb'))
+        lanz = parse_lanz(lanzFile, sequences, set(['>90', '>70', 'Clustered_site']))
+        pickle.dump(lanz, open(lanz70PKL, 'wb'))
+
+    if not lanz90PKL.is_file():
+        if not sequencePKL.is_file():
+            sequences = parse_fasta(sequenceFile)
+            pickle.dump(sequences, open(sequencePKL, 'wb'))
+        sequences = pickle.load(open(sequencePKL, 'rb'))
+        lanz = parse_lanz(lanzFile, sequences, set(['>90']))
+        pickle.dump(lanz, open(lanz90PKL, 'wb'))
 
     if not regPhosPKL.is_file():
         regPhos = parse_regulated_phosphosites(diffFile)

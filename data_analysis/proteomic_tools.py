@@ -233,9 +233,10 @@ def parse_functional_phosphosites(funcPhos: Union[str, Path],
     return result
 
 def parse_lanz(lanzFile: Union[str, Path], 
-               sequences: dict[str, str]) -> set[str]:
+               sequences: dict[str, str], 
+               quality: set[str]) -> set[str]:
     '''
-    Parse lanz's phosphoproteome (Source: Lanz et al., Phosphosite Localization: >90, >70)
+    Parse lanz's phosphoproteome (Source: Lanz et al.)
 
     Args:
         lanzFile (Union[str, Path]): path to lanz's phosphoproteome dataset. 
@@ -245,7 +246,7 @@ def parse_lanz(lanzFile: Union[str, Path],
         set[str]: phosphosite references for in lanz's phosphoproteome dataset. 
     '''
     df = pd.read_excel(lanzFile, sheet_name='Aggregate phosphoproteome')
-    df = df[(df['Source'] == 'Lanz et al.') & (df['Phosphosite Localization'] != 'Clustered_site')]
+    df = df[df['Phosphosite Localization'].isin(quality)]
     references_unmapped = df['Gene_Site (unique identifier)']
     references_mapped = set()
     for reference in references_unmapped:
@@ -374,7 +375,10 @@ def sample_random_sites(references: set[str],
                     result_references.append(reference)
     return result_references
 
-def bootstrap(data: list[float], num_iterations=1000, statistic=np.median, seed=None) -> list[float]:
+def bootstrap(data: list[float], 
+              num_iterations=1000, 
+              statistic=np.median, 
+              seed=None) -> list[float]:
     '''
     Bootstrap resampling to estimate a statistic.
 
@@ -501,3 +505,50 @@ def calculate_consurf_difference_psite(reference: str,
             continue
         consurf_neighbors.append(consurf_d[systematic_name][position] - consurf_d[systematic_name][i])
     return sum(consurf_neighbors) / len(consurf_neighbors)
+
+def bootstrap_se(data, n_bootstrap=1000):
+    medians = [np.median(np.random.choice(data, size=len(data), replace=True))
+               for _ in range(n_bootstrap)]
+    return np.std(medians)
+
+def calculate_exposure_consurf(references: set[str], 
+                               resType: str, 
+                               consurf_d: dict[str, dict[int, float]], 
+                               aaInfo: dict[str, dict[int, str]], 
+                               RSAInfo: dict[str, dict[int, float]], 
+                               dRSAInfo: dict[str, dict[int, float]]) -> list[Union[str, float]]:
+    '''
+    Calculate ConSurf score by exposure. 
+
+    Args:
+        references (set[str]): Set of references for calculation. 
+        resType (str): Conditional p-sites, universal p-sites, or random S/T. 
+        consurf_d (dict[str, dict[int, float]]): ConSurf score dictionary. 
+        aaInfo (dict[str, dict[int, str]]): Dictionary recording amino acid type. 
+        RSAInfo (dict[str, dict[int, float]]): Dictionary recording residue RSA. 
+        dRSAInfo (dict[str, dict[int, float]]): Dictionary recording residue delta RSA. 
+    '''
+    interfacial_psite = []
+    exposed_psite = []
+    buried_psite = []
+    for reference in references: 
+        systematic_name, site = reference.split('_')
+        if systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
+            continue
+        aa = site[0]
+        position = int(site[1:])
+        try: 
+            if dRSAInfo[systematic_name][position] > 0:
+                interfacial_psite.append(reference)
+            elif RSAInfo[systematic_name][position] > 0.25:
+                exposed_psite.append(reference)
+            elif RSAInfo[systematic_name][position] <= 0.25:
+                buried_psite.append(reference)
+        except KeyError:
+            continue
+    _, consurf_interfacial = retrieve_ConSurf_score(interfacial_psite, consurf_d)
+    _, consurf_exposed = retrieve_ConSurf_score(exposed_psite, consurf_d)
+    _, consurf_buried = retrieve_ConSurf_score(buried_psite, consurf_d)
+    return [('Interfacial', resType, np.median(consurf_interfacial), bootstrap_se(consurf_interfacial)), 
+            ('Exposed', resType, np.median(consurf_exposed), bootstrap_se(consurf_exposed)),
+            ('Buried', resType, np.median(consurf_buried), bootstrap_se(consurf_buried))]

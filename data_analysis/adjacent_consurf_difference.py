@@ -46,7 +46,7 @@ def main():
 
     # output files
     randomST_dis_consurf_distribution = paperDir / 'randomST_dis_consurf_distribution.jpg'
-    Fig3A = paperDir / 'Figure 3A.jpg'
+    Fig2B = paperDir / 'Figure 2B.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -102,10 +102,10 @@ def main():
     # ordered_data = [cond_diff_ord, randomST_diff_ord, univ_diff_ord]
     disordered_data = [cond_diff_dis, randomST_diff_dis, univ_diff_dis]
     labels = ['Random S/T', 'Conditional p-site', 'Universal p-site']
-    if not Fig3A.is_file():
+    if not Fig2B.is_file():
         plot_consurf_difference(disordered_data, 
                                 labels, 
-                                Fig3A, 
+                                Fig2B, 
                                 figFmt)
     '''
     pairs = [(labels[i], labels[j]) for i in range(len(labels)) for j in range(i+1, len(labels))]
