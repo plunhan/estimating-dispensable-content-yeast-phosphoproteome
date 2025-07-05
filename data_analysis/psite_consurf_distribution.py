@@ -71,7 +71,8 @@ def main():
     cond_ord_consurf_references, cond_ord_consurf = retrieve_ConSurf_score(cond_psites_ord, consurf)
     univ_ord_consurf_references, univ_ord_consurf = retrieve_ConSurf_score(univ_psites_ord, consurf)
 
-    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    exclusions = ultradeep # p-sites reported by this phosphoproteome
+    #exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
     randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')

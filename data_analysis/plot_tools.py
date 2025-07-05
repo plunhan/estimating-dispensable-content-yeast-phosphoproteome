@@ -268,6 +268,7 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
 
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
+    ax.set_xlabel("Number of perturbations")
     ax.set_ylabel("Median ConSurf score")
     ax.set_title("Distribution of ConSurf score against number of perturbations")
     # plt.tight_layout()

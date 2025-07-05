@@ -109,7 +109,14 @@ def main():
         else: 
             resType = "Universal p-sites"
         rows = calculate_exposure_consurf(references, resType, consurf, aaInfo, RSAInfo, dRSAInfo)
-        df_ls.extend(rows)
+        print(rows)
+        print(type(rows))
+        if i == 1:
+            df_ls = rows + df_ls
+        else:
+            df_ls.extend(rows)
+
+    print(df_ls)
 
     df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
     plot_consurf_exposure(df, Fig3, figFmt)

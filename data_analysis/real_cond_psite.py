@@ -38,7 +38,7 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
-    Fig3B = paperDir / 'Figure 3B.jpg'
+    Fig3A = paperDir / 'Figure 3A.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -66,10 +66,10 @@ def main():
     data_lists = [retrieve_references_by_order(l, diso, 'disordered') for l in data_lists]
     data_lists = [retrieve_ConSurf_score(l, consurf)[1] for l in data_lists]
     
-    if not Fig3B.is_file():
+    if not Fig3A.is_file():
         plot_consurf_distribution_against_perturbations(data_lists, 
                                                         ['1', '2-4', '5-7', '8-10'], 
-                                                        Fig3B, 
+                                                        Fig3A, 
                                                         figFmt)
     
 if __name__ == '__main__':
