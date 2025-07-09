@@ -108,7 +108,7 @@ def main():
             sequences = parse_fasta(sequenceFile)
             pickle.dump(sequences, open(sequencePKL, 'wb'))
         sequences = pickle.load(open(sequencePKL, 'rb'))
-        lanz = parse_lanz(lanzFile, sequences, set(['>90', '>70', 'Clustered_site']))
+        lanz = parse_lanz(lanzFile, sequences, set(['>70']))
         pickle.dump(lanz, open(lanz70PKL, 'wb'))
 
     if not lanz90PKL.is_file():

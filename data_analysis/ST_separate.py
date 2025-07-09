@@ -39,8 +39,8 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
+    Fig3A = paperDir / 'Figure 3A.jpg'
     Fig3B = paperDir / 'Figure 3B.jpg'
-    Fig3C = paperDir / 'Figure 3C.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -75,18 +75,18 @@ def main():
         disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
         labels = ['Conditional p-sites', 'Random S/T', 'Universal p-sites']
 
-        if sample_residue == 'S' and not Fig3B.is_file():
+        if sample_residue == 'S' and not Fig3A.is_file():
             plot_consurf_distribution_separate(disordered_data, 
                                                labels, 
-                                               Fig3B, 
+                                               Fig3A, 
                                                figFmt, 
                                                'Distribution of ConSurf score for serines',
                                                sample_residue,)
 
-        if sample_residue == 'T' and not Fig3C.is_file():
+        if sample_residue == 'T' and not Fig3B.is_file():
             plot_consurf_distribution_separate(disordered_data, 
                                                labels, 
-                                               Fig3C, 
+                                               Fig3B, 
                                                figFmt, 
                                                'Distribution of ConSurf score for threonines',
                                                sample_residue)

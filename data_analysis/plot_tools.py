@@ -124,6 +124,8 @@ def plot_consurf_distribution(data_lists: list[list[float]],
                               outPath: Union[str, Path], 
                               fmt: str, 
                               title: str,
+                              step: float,
+                              ylims: tuple[float],
                               urge_positive=False) -> None:
 
     medians = [np.median(d) for d in data_lists]
@@ -139,7 +141,6 @@ def plot_consurf_distribution(data_lists: list[list[float]],
         height_buffer = 0.1
     else:
         height_buffer = max(medians) + max(ses) * 1.5
-    step = max(ses) * 2
     for i, (i1, i2) in enumerate(pairs):
         stat, pvalue = ranksums(data_lists[i1], data_lists[i2])
         sig = significance_level(pvalue)
@@ -155,6 +156,7 @@ def plot_consurf_distribution(data_lists: list[list[float]],
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
     ax.set_ylabel("Median ConSurf score")
+    ax.set_ylim(ylims)
     ax.set_title(f"Comparison of median ConSurf score in {title} regions")
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
@@ -210,6 +212,7 @@ def plot_consurf_distribution_separate(data_lists: list[list[float]],
 def plot_consurf_difference(data_lists: list[list[float]], 
                             group_names: list[str], 
                             outPath: Union[str, Path], 
+                            ylims: tuple[float],
                             fmt: str) -> None:
 
     medians = [-np.median(d) for d in data_lists]
@@ -230,13 +233,14 @@ def plot_consurf_difference(data_lists: list[list[float]],
         if i == 2: 
             y = height_buffer + step
         x1, x2 = x_pos[i1], x_pos[i2]
-        ax.plot([x1+0.05, x1+0.05, x2-0.05, x2-0.05], [y, y + 0.02, y + 0.02, y], lw=1.2, c='black')
+        ax.plot([x1+0.025, x1+0.025, x2-0.025, x2-0.025], [y, y + 0.02, y + 0.02, y], lw=1.2, c='black')
         ax.text((x1 + x2) / 2, y + 0.025, sig, ha='center', va='bottom', fontsize=10)
 
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
     ax.set_ylabel("Median of difference in ConSurf score between\nadjacent residues and p-site")
     ax.set_title("Difference in ConSurf score between adjacent residues and p-site")
+    ax.set_ylim(ylims)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()

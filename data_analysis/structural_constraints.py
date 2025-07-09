@@ -48,6 +48,7 @@ def main():
     figFmt = 'jpg'
 
     sample_residues = 'ST'
+    sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -69,7 +70,7 @@ def main():
     rsa_pkl = procDir / 'RSA_dicts.pkl'
 
     # output files
-    Fig3 = paperDir / f'Figure 4 {method}.jpg'
+    Fig6 = paperDir / f'Figure 6 {method}.jpg'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
@@ -95,7 +96,8 @@ def main():
     univ_psites_ord = retrieve_references_by_order(univ_psites_ST, diso, 'ordered')
     all_psites_ord = retrieve_references_by_order(all_psites_ST, diso, 'ordered')
 
-    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    # exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    exclusions = ultradeep
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
     randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
@@ -109,17 +111,14 @@ def main():
         else: 
             resType = "Universal p-sites"
         rows = calculate_exposure_consurf(references, resType, consurf, aaInfo, RSAInfo, dRSAInfo)
-        print(rows)
-        print(type(rows))
         if i == 1:
             df_ls = rows + df_ls
         else:
             df_ls.extend(rows)
 
-    print(df_ls)
-
     df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
-    plot_consurf_exposure(df, Fig3, figFmt)
+    print(df)
+    #plot_consurf_exposure(df, Fig6, figFmt)
 
 if __name__ == '__main__':
     main()

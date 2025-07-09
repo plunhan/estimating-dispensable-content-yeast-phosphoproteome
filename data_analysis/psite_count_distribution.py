@@ -38,7 +38,8 @@ def main():
 
     # output files
     Fig1A = paperDir / 'Figure 1A.jpg'
-    Fig1B = paperDir / 'Figure 1B.jpg'
+    FigS1A = paperDir / 'Figure S1A.jpg'
+    FigS1B = paperDir / 'Figure S1B.jpg'
 
     diso = pickle.load(open(disoPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -46,14 +47,20 @@ def main():
     phosStres_ord = {key: retrieve_references_by_order(references, diso, 'ordered') for key, references in phosStres.items()}
     phosStres_dis = {key: retrieve_references_by_order(references, diso, 'disordered') for key, references in phosStres.items()}
 
-    if not Fig1A.is_file(): 
-        plot_count_per_perturbation(phosStres_ord, 
+    if not Fig1A.is_file():
+        plot_count_per_perturbation(phosStres, 
                                     Fig1A, 
+                                    'Detection frequency of phosphosites across perturbations',
+                                    figFmt)
+
+    if not FigS1A.is_file(): 
+        plot_count_per_perturbation(phosStres_ord, 
+                                    FigS1A, 
                                     'Detection frequency of phosphosites in ordered\nregions across perturbations',
                                     figFmt)
-    if not Fig1B.is_file(): 
+    if not FigS1B.is_file(): 
         plot_count_per_perturbation(phosStres_dis, 
-                                    Fig1B, 
+                                    FigS1B, 
                                     'Detection frequency of phosphosites in disordered\nregions across perturbations',
                                     figFmt)
 

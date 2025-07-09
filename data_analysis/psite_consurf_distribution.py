@@ -39,8 +39,8 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
-    Fig1C = paperDir / 'Figure 1C.jpg'
-    Fig1D = paperDir / 'Figure 1D.jpg'
+    Fig2A = paperDir / 'Figure 2A.jpg'
+    Fig2B = paperDir / 'Figure 2B.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -87,11 +87,24 @@ def main():
     print(np.median(univ_dis_consurf))
     print(np.median(randomST_dis_consurf))
 
-    if not Fig1C.is_file():
-        plot_consurf_distribution(ordered_data, labels, Fig1C, figFmt, 'ordered', urge_positive=True)
+    if not Fig2A.is_file():
+        plot_consurf_distribution(ordered_data, 
+                                  labels, 
+                                  Fig2A, 
+                                  figFmt, 
+                                  'ordered', 
+                                  0.05, 
+                                  (-0.45, 0.25),
+                                  urge_positive=True)
 
-    if not Fig1D.is_file():
-        plot_consurf_distribution(disordered_data, labels, Fig1D, figFmt, 'disordered')
+    if not Fig2B.is_file():
+        plot_consurf_distribution(disordered_data, 
+                                  labels, 
+                                  Fig2B, 
+                                  figFmt, 
+                                  'disordered', 
+                                  0.05,
+                                  (0.0, 0.50))
 
 if __name__ == '__main__':
     main()

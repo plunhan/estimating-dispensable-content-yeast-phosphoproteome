@@ -34,7 +34,7 @@ def main():
     regPhosPKL = paperDir / 'reguPhos.pkl'
 
     # output files
-    Fig1C = paperDir / 'Figure 1C.jpg'
+    Fig1B = paperDir / 'Figure 1B.jpg'
 
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
     phosStres = {key: retrieve_references_by_residue_type(references, resType) for key, references in phosStres.items()}
@@ -45,8 +45,8 @@ def main():
     univ = set([reference for key, references in phosStres.items() for reference in references if key > 91])
     reg = pickle.load(open(regPhosPKL, 'rb'))
 
-    if not Fig1C.is_file(): 
-        plot_reg_overlap(cond, univ, reg, Fig1C, figFmt)
+    if not Fig1B.is_file(): 
+        plot_reg_overlap(cond, univ, reg, Fig1B, figFmt)
 
 if __name__ == '__main__':
     main()

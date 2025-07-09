@@ -38,7 +38,8 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
-    Fig3A = paperDir / 'Figure 3A.jpg'
+    Fig4A = paperDir / 'Figure 4A.jpg'
+    Fig4B = paperDir / 'Figure 4B.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -61,15 +62,39 @@ def main():
             references_5_7.extend(phosStres[i])
         elif i > 7: 
             references_8_10.extend(phosStres[i])
-    data_lists = [references_1, references_2_4, references_5_7, references_8_10]
-    data_lists = [retrieve_references_by_residue_type(l, sample_residues) for l in data_lists]
-    data_lists = [retrieve_references_by_order(l, diso, 'disordered') for l in data_lists]
-    data_lists = [retrieve_ConSurf_score(l, consurf)[1] for l in data_lists]
+    data_lists_cond = [references_1, references_2_4, references_5_7, references_8_10]
+    data_lists_cond = [retrieve_references_by_residue_type(l, sample_residues) for l in data_lists_cond]
+    data_lists_cond_dis = [retrieve_references_by_order(l, diso, 'disordered') for l in data_lists_cond]
+    data_lists_cond_dis = [retrieve_ConSurf_score(l, consurf)[1] for l in data_lists_cond_dis]
     
-    if not Fig3A.is_file():
-        plot_consurf_distribution_against_perturbations(data_lists, 
+    if not Fig4A.is_file():
+        plot_consurf_distribution_against_perturbations(data_lists_cond_dis, 
                                                         ['1', '2-4', '5-7', '8-10'], 
-                                                        Fig3A, 
+                                                        Fig4A, 
+                                                        figFmt)
+
+    references_92_94 = []
+    references_95_97 = []
+    references_98_100 = []
+    references_101 = []
+    for i in range(92, 102): 
+        if i == 101:
+            references_101.extend(phosStres[i])
+        elif 92 <= i <= 94: 
+            references_92_94.extend(phosStres[i])
+        elif 95 <= i <= 97: 
+            references_95_97.extend(phosStres[i])
+        elif 97 <= i <= 100: 
+            references_98_100.extend(phosStres[i])
+    data_lists_univ = [references_92_94, references_95_97, references_98_100, references_101]
+    data_lists_univ = [retrieve_references_by_residue_type(l, sample_residues) for l in data_lists_univ]
+    data_lists_univ_dis = [retrieve_references_by_order(l, diso, 'disordered') for l in data_lists_univ]
+    data_lists_univ_dis = [retrieve_ConSurf_score(l, consurf)[1] for l in data_lists_univ_dis]
+
+    if not Fig4B.is_file():
+        plot_consurf_distribution_against_perturbations(data_lists_univ_dis, 
+                                                        ['92-94', '95-97', '98-100', '101'], 
+                                                        Fig4B, 
                                                         figFmt)
     
 if __name__ == '__main__':
