@@ -215,7 +215,7 @@ def plot_consurf_difference(data_lists: list[list[float]],
                             ylims: tuple[float],
                             fmt: str) -> None:
 
-    medians = [-np.median(d) for d in data_lists]
+    medians = [np.median(d) for d in data_lists]
     ses = [bootstrap_se(d) for d in data_lists]
 
     fig, ax = plt.subplots(figsize=(6, 5))
@@ -224,7 +224,7 @@ def plot_consurf_difference(data_lists: list[list[float]],
     ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
 
     pairs = [(0, 1), (1, 2), (0, 2)]
-    height_buffer = max(medians) + max(ses) * 1.5
+    height_buffer = 0.025
     step = max(ses) * 2
     for i, (i1, i2) in enumerate(pairs):
         stat, pvalue = ranksums(data_lists[i1], data_lists[i2])
@@ -236,10 +236,11 @@ def plot_consurf_difference(data_lists: list[list[float]],
         ax.plot([x1+0.025, x1+0.025, x2-0.025, x2-0.025], [y, y + 0.02, y + 0.02, y], lw=1.2, c='black')
         ax.text((x1 + x2) / 2, y + 0.025, sig, ha='center', va='bottom', fontsize=10)
 
+    ax.axhline(0, color='black', linestyle='-', linewidth=1)
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
-    ax.set_ylabel("Median of difference in ConSurf score between\nadjacent residues and p-site")
-    ax.set_title("Difference in ConSurf score between adjacent residues and p-site")
+    ax.set_ylabel("Median ConSurf score of p-site relative to ajacent residues")
+    ax.set_title("ConSurf score of p-site relative to adjacent residues")
     ax.set_ylim(ylims)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)

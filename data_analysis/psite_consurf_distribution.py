@@ -19,7 +19,7 @@ def main():
 
     figFmt = 'jpg'
 
-    sample_residues = 'ST'
+    sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -70,9 +70,11 @@ def main():
     univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
     cond_ord_consurf_references, cond_ord_consurf = retrieve_ConSurf_score(cond_psites_ord, consurf)
     univ_ord_consurf_references, univ_ord_consurf = retrieve_ConSurf_score(univ_psites_ord, consurf)
+    all_ord_consurf_references, all_ord_consurf = retrieve_ConSurf_score(all_psites_ord, consurf)
+    all_dis_consurf_references, all_dis_consurf = retrieve_ConSurf_score(all_psites_dis, consurf)
 
     exclusions = ultradeep # p-sites reported by this phosphoproteome
-    #exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
     randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
@@ -86,6 +88,7 @@ def main():
     print(np.median(cond_dis_consurf))
     print(np.median(univ_dis_consurf))
     print(np.median(randomST_dis_consurf))
+    print(np.median(all_dis_consurf))
 
     if not Fig2A.is_file():
         plot_consurf_distribution(ordered_data, 

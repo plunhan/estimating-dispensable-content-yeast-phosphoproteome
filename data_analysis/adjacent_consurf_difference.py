@@ -106,7 +106,7 @@ def main():
         plot_consurf_difference(disordered_data, 
                                 labels, 
                                 Fig3C, 
-                                (0, 0.50),
+                                (-0.4, 0.15),
                                 figFmt)
     '''
     pairs = [(labels[i], labels[j]) for i in range(len(labels)) for j in range(i+1, len(labels))]
