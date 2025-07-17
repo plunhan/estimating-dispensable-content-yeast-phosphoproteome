@@ -19,7 +19,8 @@ def main():
 
     figFmt = 'jpg'
 
-    sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
+    sample_residues = 'ST'
+    # sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -83,7 +84,7 @@ def main():
 
     ordered_data = [cond_ord_consurf, randomST_ord_consurf, univ_ord_consurf]
     disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
-    labels = ['Conditional p-sites', 'Random S/T', 'Universal p-sites']
+    labels = ['Conditional phosphosites', 'Random S/T', 'Universal phosphosites']
 
     print(np.median(cond_dis_consurf))
     print(np.median(univ_dis_consurf))

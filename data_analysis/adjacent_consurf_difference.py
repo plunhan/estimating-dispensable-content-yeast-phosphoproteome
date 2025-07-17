@@ -101,7 +101,7 @@ def main():
 
     # ordered_data = [cond_diff_ord, randomST_diff_ord, univ_diff_ord]
     disordered_data = [cond_diff_dis, randomST_diff_dis, univ_diff_dis]
-    labels = ['Conditional p-sites', 'Random S/T', 'Universal p-sites']
+    labels = ['Conditional phosphosites', 'Random S/T', 'Universal phosphosites']
     if not Fig3C.is_file():
         plot_consurf_difference(disordered_data, 
                                 labels, 

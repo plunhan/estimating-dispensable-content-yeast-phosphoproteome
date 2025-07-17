@@ -48,7 +48,7 @@ def main():
     figFmt = 'jpg'
 
     sample_residues = 'ST'
-    sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
+    #sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -70,7 +70,7 @@ def main():
     rsa_pkl = procDir / 'RSA_dicts.pkl'
 
     # output files
-    Fig6 = paperDir / f'Figure 6 {method}.jpg'
+    Fig6A = paperDir / f'Figure 6A.jpg'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
@@ -107,9 +107,9 @@ def main():
         if i == 0: 
             resType = "Random S/T"
         elif i == 1: 
-            resType = "Conditional p-sites"
+            resType = "Conditional phosphosites"
         else: 
-            resType = "Universal p-sites"
+            resType = "Universal phosphosites"
         rows = calculate_exposure_consurf(references, resType, consurf, aaInfo, RSAInfo, dRSAInfo)
         if i == 1:
             df_ls = rows + df_ls
@@ -117,8 +117,7 @@ def main():
             df_ls.extend(rows)
 
     df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
-    print(df)
-    #plot_consurf_exposure(df, Fig6, figFmt)
+    plot_consurf_exposure(df, Fig6A, figFmt)
 
 if __name__ == '__main__':
     main()

@@ -249,7 +249,9 @@ def plot_consurf_difference(data_lists: list[list[float]],
 def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]], 
                                                     group_names: list[str], 
                                                     outPath: Union[str, Path], 
-                                                    fmt: str) -> None:
+                                                    fmt: str, 
+                                                    ylims: tuple[float], 
+                                                    title) -> None:
     '''
     Plot distribution of ConSurf score against the number of perturbations. 
     Perturbation bins: 1, 2-4, 5-7, 8-10
@@ -270,12 +272,13 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
     x_pos = np.arange(len(data_lists))
 
     ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
-
+    ax.axhline(0, color='black', linestyle='-', linewidth=1)
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
     ax.set_xlabel("Number of perturbations")
     ax.set_ylabel("Median ConSurf score")
-    ax.set_title("Distribution of ConSurf score against number of perturbations")
+    ax.set_ylim(ylims)
+    ax.set_title(title)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
@@ -283,29 +286,31 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
 def plot_consurf_exposure(df: pd.DataFrame, 
                           outPath: Union[str, Path], 
                           figFmt: str) -> None:
-    sns.set(style="whitegrid")
-    plt.figure(figsize=(6, 5))
+    plt.figure(figsize=(7, 5))
     ax = sns.barplot(
         data=df, 
         x='Exposure', 
         y='Median',
         hue='Type', 
         palette='Set2',
-        capsize=0.1, 
-        errcolor='black',
-        errwidth=1,
         ci=None
     )
+
+    for bar in ax.patches:
+        bar.set_edgecolor('black')
+        bar.set_linewidth(1.2)
 
     for bar, (_, row) in zip(ax.patches, df.iterrows()):
         x = bar.get_x() + bar.get_width() / 2
         y = bar.get_height()
-        ax.errorbar(x, y, yerr=row['Standard error'], fmt='none', ecolor='black', capsize=5, elinewidth=1)
+        ax.errorbar(x, y, yerr=row['Standard error'], fmt='none', 
+                    ecolor='black', capsize=5, elinewidth=1)
+
+    ax.axhline(0, color='black', linestyle='-', linewidth=1)
 
     ax.set_title("Distribution of evolutionary conservation for residues with different exposure")
     ax.set_xlabel("Residue exposure")
     ax.set_ylabel("Median ConSurf score")
     plt.legend(title="Residue type")
     plt.savefig(outPath, dpi=300, format=figFmt)
-    print('Finished')
     plt.close()

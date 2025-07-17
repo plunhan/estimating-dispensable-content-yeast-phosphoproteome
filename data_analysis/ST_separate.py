@@ -73,7 +73,7 @@ def main():
         randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
 
         disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
-        labels = ['Conditional p-sites', 'Random S/T', 'Universal p-sites']
+        labels = ['Conditional phosphosites', 'Random S/T', 'Universal phosphosites']
 
         if sample_residue == 'S' and not Fig3A.is_file():
             plot_consurf_distribution_separate(disordered_data, 
