@@ -506,6 +506,35 @@ def calculate_consurf_difference_psite(reference: str,
         consurf_neighbors.append(consurf_d[systematic_name][position] - consurf_d[systematic_name][i])
     return sum(consurf_neighbors) / len(consurf_neighbors)
 
+def retrieve_exposure_references(references: set[str],
+                                 resType: str, 
+                                 aaInfo: dict[str, dict[int, str]], 
+                                 RSAInfo: dict[str, dict[int, str]], 
+                                 dRSAInfo: dict[str, dict[int, str]]) -> set[str]:
+    '''
+    Return references of exposed residues. 
+
+    Args:
+        references (set[str]): Set of references for calculation. 
+        resType (str): Conditional p-sites, universal p-sites, or random S/T. 
+        aaInfo (dict[str, dict[int, str]]): Dictionary recording amino acid type. 
+        RSAInfo (dict[str, dict[int, float]]): Dictionary recording residue RSA. 
+        dRSAInfo (dict[str, dict[int, float]]): Dictionary recording residue delta RSA. 
+    '''
+    result_set = set()
+    for reference in references: 
+        systematic_name, site = reference.split('_')
+        if systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
+            continue
+        aa = site[0]
+        position = int(site[1:])
+        try: 
+            if dRSAInfo[systematic_name][position] == 0 and RSAInfo[systematic_name][position] > 0.25:
+                result_set.add(reference)
+        except KeyError:
+            continue
+    return result_set
+
 def bootstrap_se(data, n_bootstrap=1000):
     medians = [np.median(np.random.choice(data, size=len(data), replace=True))
                for _ in range(n_bootstrap)]
