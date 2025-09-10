@@ -11,9 +11,7 @@ from proteomic_tools import (get_phosphosites_given_perturbations,
 							 retrieve_references_by_order, 
 							 retrieve_references_by_residue_type, 
 							 retrieve_ConSurf_score,
-							 sample_random_sites, 
-                             calculate_consurf_difference_psites)
-from scipy.stats import ranksums
+							 sample_random_sites)
 
 def main():
 
@@ -69,26 +67,26 @@ def main():
     univ_psites_dis = retrieve_references_by_order(univ_psites_ST, diso, 'disordered')
     all_psites_dis = retrieve_references_by_order(all_psites_ST, diso, 'disordered')
 
-    cond_relative = calculate_consurf_difference_psites(cond_psites_dis, consurf, window_size=5)
-    univ_relative = calculate_consurf_difference_psites(univ_psites_dis, consurf, window_size=5)
-
     cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis, consurf)
     univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
 
-    exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
+    PhosphoGIRD_ST = retrieve_references_by_residue_type(PhosphoGIRD, sample_residues)
+    PhosphoGIRD_dis = retrieve_references_by_order(PhosphoGIRD_ST, diso, 'disordered')
+    PhosphoGIRD_ord = retrieve_references_by_order(PhosphoGIRD_ST, diso, 'ordered')
+    PhosphoGIRD_dis_consurf_references, PhosphoGIRD_dis_consurf = retrieve_ConSurf_score(PhosphoGIRD_dis, consurf)
+    PhosphoGIRD_ord_consurf_references, PhosphoGIRD_ord_consurf = retrieve_ConSurf_score(PhosphoGIRD_ord, consurf)
+
+    print(len(set(cond_dis_consurf_references).intersection(set(PhosphoGIRD_dis_consurf_references))), len(set(univ_dis_consurf_references).intersection(set(PhosphoGIRD_dis_consurf_references))))
+
+    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
-    randomST_relative = calculate_consurf_difference_psites(randomST_dis, consurf, window_size=5)
     randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
 
-    disordered_data = [cond_relative, randomST_relative, univ_relative]
-    labels = ['Non-phosphorylated S/T', 'Conditional phosphosites', 'Universal phosphosites']
-
-    print(f'conditional: {np.median(cond_relative)}')
-    print(f'universal: {np.median(univ_relative)}')
-    print(f'Non-phosphorylated S/T: {np.median(randomST_relative)}')
-
-    for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert', 'conditional']:
+    disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
+    labels = ['Random S/T', 'Conditional', 'Universal']
+    '''
+    for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert']:
         if db == 'sgd': 
             psites = sgd
         elif db == 'biogrid':
@@ -99,16 +97,14 @@ def main():
             psites = lanz90
         elif db == 'leutert':
             psites = all_psites
-        elif db == 'conditional': 
-            psites = cond_psites
-        print(f'\n{db}')
+        print(db)
         all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
         all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
-        db_relative = calculate_consurf_difference_psites(all_psites_dis_db, consurf, window_size=5)
         all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_db, consurf)
-        print(f'{np.median(db_relative):.3f} of {len(db_relative)}')
-        dispensable = estimate_pi_mixture_model(randomST_relative, univ_relative, db_relative)
-        print(f'{dispensable:.2f}')
+        print(f'{np.median(all_dis_consurf_db):.3f} of {len(all_dis_consurf_db)}')
+        dispensable = estimate_pi_mixture_model(randomST_dis_consurf, PhosphoGIRD_dis_consurf, all_dis_consurf_db)
+        print(f'{db}, {dispensable:.2f}, {(np.median(all_dis_consurf_db) - np.median(PhosphoGIRD_dis_consurf))/(np.median(cond_dis_consurf) - np.median(PhosphoGIRD_dis_consurf)):.2f}')
+    '''
 
 if __name__ == '__main__':
     main()

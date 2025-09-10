@@ -1,19 +1,33 @@
 '''
-Categorize conditional p-sites, universal p-sites, and random S/T according to the exposure
-and compare the evolutionary rate in each exposure category. 
+Estimate fraction of functionally dispensable p-sites in phosphoproteomes. 
 '''
 
-import pandas as pd
+import numpy as np
+import os
 import pickle
+from estimate_tools import estimate_pi_mixture_model
 from lib_import_tools import map_protein_id_to_locus_id
 from pathlib import Path
-from plot_tools import plot_consurf_exposure
-from proteomic_tools import (retrieve_references_by_residue_type, 
-							 get_phosphosites_given_perturbations,
-							 sample_random_sites, 
-							 retrieve_references_by_order, 
+from proteomic_tools import (get_phosphosites_given_perturbations, 
+                             retrieve_references_by_order, 
+                             retrieve_references_by_residue_type, 
+                             retrieve_ConSurf_score,
                              retrieve_exposure_references, 
-							 calculate_exposure_consurf_alphafold)
+                             sample_random_sites)
+
+def calculate_average_rsa(references, aaInfo_all, RSAInfo_filtered, deltaRSAInfo_filtered): 
+    result_ls = []
+    for reference in references: 
+        systematic_name, site = reference.split('_')
+        if systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
+            continue
+        aa = site[0]
+        position = int(site[1:])
+        try:
+            result_ls.append(RSAInfo_filtered[systematic_name][position])
+        except KeyError:
+            continue
+    return np.mean(result_ls), np.median(result_ls)
 
 def default_list_dict():
     return defaultdict(list)
@@ -49,7 +63,6 @@ def main():
     figFmt = 'jpg'
 
     sample_residues = 'ST'
-    #sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -68,12 +81,13 @@ def main():
     sequencePKL = paperDir / 'Scer_seq.pkl'
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
-    rsa_pkl = procDir / 'RSA_dicts.pkl'
     lanz90PKL = paperDir / 'lanz90.pkl'
-    rsa_alphafold_pkl = paperDir / 'rsa_alphafold.pkl'
+    lanz70PKL = paperDir / 'lanz70.pkl'
+    rsa_pkl = procDir / 'RSA_dicts.pkl'
 
     # output files
-    Fig6A = paperDir / f'Figure 6A_diff.jpg'
+    Fig2A = paperDir / 'Figure 2A.jpg'
+    Fig2B = paperDir / 'Figure 2B.jpg'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
@@ -84,44 +98,59 @@ def main():
     sgd = pickle.load(open(sgdPKL, 'rb'))
     biogrid = pickle.load(open(biogridPKL, 'rb'))
     lanz90 = pickle.load(open(lanz90PKL, 'rb'))
+    lanz70 = pickle.load(open(lanz70PKL, 'rb'))
     aaInfo, RSAInfo, dRSAInfo = parse_rsa_d(rsa_pkl, IDMappingDict, method=method)
-    rsa_alphafold = pickle.load(open(rsa_alphafold_pkl, 'rb'))
 
-    phosStres = {key: retrieve_references_by_residue_type(references, sample_residues) for key, references in phosStres.items()}
+    # Part I: difference between conditional and universal phosphosites
     cond_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 11)))
     univ_psites = get_phosphosites_given_perturbations(phosStres, list(range(92, 102)))
     all_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 102)))
+
     cond_psites_ST = retrieve_references_by_residue_type(cond_psites, sample_residues)
     univ_psites_ST = retrieve_references_by_residue_type(univ_psites, sample_residues)
     all_psites_ST = retrieve_references_by_residue_type(all_psites, sample_residues)
+
     cond_psites_dis = retrieve_references_by_order(cond_psites_ST, diso, 'disordered')
     univ_psites_dis = retrieve_references_by_order(univ_psites_ST, diso, 'disordered')
     all_psites_dis = retrieve_references_by_order(all_psites_ST, diso, 'disordered')
-    cond_psites_ord = retrieve_references_by_order(cond_psites_ST, diso, 'ordered')
-    univ_psites_ord = retrieve_references_by_order(univ_psites_ST, diso, 'ordered')
-    all_psites_ord = retrieve_references_by_order(all_psites_ST, diso, 'ordered')
 
+    cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis, consurf)
+    univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
+
+    cond_mean, cond_median = calculate_average_rsa(cond_dis_consurf_references, aaInfo, RSAInfo, dRSAInfo)
+    univ_mean, univ_median = calculate_average_rsa(univ_dis_consurf_references, aaInfo, RSAInfo, dRSAInfo)
+
+    # exclusions = ultradeep
     exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
+    # exclusions = set()
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
-    randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
+    randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
+    rand_mean, rand_median = calculate_average_rsa(randomST_dis_consurf_references, aaInfo, RSAInfo, dRSAInfo)
 
-    df_ls = []
-    for i, references in enumerate([randomST_dis, cond_psites_dis, univ_psites_dis]): 
-        if i == 0: 
-            resType = "Non-phosphorylated S/T"
-        elif i == 1: 
-            resType = "Conditional phosphosites"
-        else: 
-            resType = "Universal phosphosites"
-        rows = calculate_exposure_consurf_alphafold(references, resType, consurf, rsa_alphafold, dRSAInfo)
-        if i == 1:
-            df_ls = rows + df_ls
-        else:
-            df_ls.extend(rows)
+    print("conditional", cond_mean, cond_median, len(cond_dis_consurf_references))
+    print("universal", univ_mean, univ_median, len(univ_dis_consurf_references))
+    print("random", rand_mean, rand_median, len(randomST_dis_consurf_references))
 
-    df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
-    plot_consurf_exposure(df, Fig6A, figFmt)
+    disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
+    labels = ['Random S/T', 'Conditional', 'Universal']
+
+    for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert']:
+        if db == 'sgd': 
+            psites = sgd
+        elif db == 'biogrid':
+            psites = biogrid
+        elif db == 'lanz70':
+            psites = lanz70
+        elif db == 'lanz90':
+            psites = lanz90
+        elif db == 'leutert':
+            psites = all_psites
+        all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
+        all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
+        all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_db, consurf)
+        ave, med = calculate_average_rsa(all_dis_consurf_references_db, aaInfo, RSAInfo, dRSAInfo)
+        print(db, ave, med, len(all_dis_consurf_references_db))
 
 if __name__ == '__main__':
     main()

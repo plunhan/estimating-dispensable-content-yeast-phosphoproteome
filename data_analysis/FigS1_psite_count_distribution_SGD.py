@@ -1,25 +1,28 @@
 '''
-Estimate fraction of functionally dispensable p-sites in phosphoproteomes. 
+ConSurf score comparison between conditional p-sites, universal p-sites, and random S/T. 
 '''
 
 import numpy as np
 import os
+import pandas as pd
 import pickle
-from estimate_tools import estimate_pi_mixture_model
+from lib_import_tools import map_protein_id_to_locus_id
 from pathlib import Path
+from plot_tools import plot_consurf_difference
 from proteomic_tools import (get_phosphosites_given_perturbations, 
-							 retrieve_references_by_order, 
-							 retrieve_references_by_residue_type, 
-							 retrieve_ConSurf_score,
-							 sample_random_sites, 
+                             retrieve_references_by_residue_type,
+                             retrieve_references_by_order,
+                             retrieve_ConSurf_score, 
+                             sample_random_sites, 
                              calculate_consurf_difference_psites)
 from scipy.stats import ranksums
 
-def main():
+def main(): 
 
     figFmt = 'jpg'
 
     sample_residues = 'ST'
+    # sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -35,15 +38,12 @@ def main():
     consurfPKL = paperDir / 'consurf_all.pkl'
     disoPKL = paperDir / 'diso_all.pkl'
     sequencePKL = paperDir / 'Scer_seq.pkl'
+    lanz90PKL = paperDir / 'lanz90.pkl'
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
-    lanz90PKL = paperDir / 'lanz90.pkl'
-    lanz70PKL = paperDir / 'lanz70.pkl'
-    PhosphoGIRD_PKL = paperDir / 'PhosphoGIRD.pkl'
 
     # output files
-    Fig2A = paperDir / 'Figure 2A.jpg'
-    Fig2B = paperDir / 'Figure 2B.jpg'
+    FigS1 = paperDir / 'Figure S1.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -53,62 +53,59 @@ def main():
     sgd = pickle.load(open(sgdPKL, 'rb'))
     biogrid = pickle.load(open(biogridPKL, 'rb'))
     lanz90 = pickle.load(open(lanz90PKL, 'rb'))
-    lanz70 = pickle.load(open(lanz70PKL, 'rb'))
-    PhosphoGIRD = pickle.load(open(PhosphoGIRD_PKL, 'rb'))
 
     # Part I: difference between conditional and universal phosphosites
     cond_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 11)))
     univ_psites = get_phosphosites_given_perturbations(phosStres, list(range(92, 102)))
+    intermediate_psites = get_phosphosites_given_perturbations(phosStres, list(range(11, 92)))
     all_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 102)))
 
+    cond_psites = cond_psites.intersection(sgd)
+    univ_psites = univ_psites.intersection(sgd)
+
     cond_psites_ST = retrieve_references_by_residue_type(cond_psites, sample_residues)
+    intermediate_psites_ST = retrieve_references_by_residue_type(intermediate_psites, sample_residues)
     univ_psites_ST = retrieve_references_by_residue_type(univ_psites, sample_residues)
     all_psites_ST = retrieve_references_by_residue_type(all_psites, sample_residues)
 
     cond_psites_dis = retrieve_references_by_order(cond_psites_ST, diso, 'disordered')
+    intermediate_psites_dis = retrieve_references_by_order(intermediate_psites_ST, diso, 'disordered')
     univ_psites_dis = retrieve_references_by_order(univ_psites_ST, diso, 'disordered')
     all_psites_dis = retrieve_references_by_order(all_psites_ST, diso, 'disordered')
-
-    cond_relative = calculate_consurf_difference_psites(cond_psites_dis, consurf, window_size=5)
-    univ_relative = calculate_consurf_difference_psites(univ_psites_dis, consurf, window_size=5)
+    cond_psites_ord = retrieve_references_by_order(cond_psites_ST, diso, 'ordered')
+    univ_psites_ord = retrieve_references_by_order(univ_psites_ST, diso, 'ordered')
+    all_psites_ord = retrieve_references_by_order(all_psites_ST, diso, 'ordered')
 
     cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis, consurf)
+    intermediate_dis_consurf_references, intermediate_dis_consurf = retrieve_ConSurf_score(intermediate_psites_dis, consurf)
     univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
+    cond_ord_consurf_references, cond_ord_consurf = retrieve_ConSurf_score(cond_psites_ord, consurf)
+    univ_ord_consurf_references, univ_ord_consurf = retrieve_ConSurf_score(univ_psites_ord, consurf)
+    all_ord_consurf_references, all_ord_consurf = retrieve_ConSurf_score(all_psites_ord, consurf)
+    all_dis_consurf_references, all_dis_consurf = retrieve_ConSurf_score(all_psites_dis, consurf)
 
     exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
-    randomST_relative = calculate_consurf_difference_psites(randomST_dis, consurf, window_size=5)
+    randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
     randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
+    randomST_ord_consurf_references, randomST_ord_consurf = retrieve_ConSurf_score(randomST_ord, consurf)
 
-    disordered_data = [cond_relative, randomST_relative, univ_relative]
+    cond_relative = calculate_consurf_difference_psites(cond_psites_dis, consurf, window_size=5)
+    univ_relative = calculate_consurf_difference_psites(univ_psites_dis, consurf, window_size=5)
+    randomST_relative = calculate_consurf_difference_psites(randomST_dis, consurf, window_size=5)
+
+    ordered_data = [cond_ord_consurf, randomST_ord_consurf, univ_ord_consurf]
+    disordered_data = [randomST_relative, cond_relative, univ_relative]
     labels = ['Non-phosphorylated S/T', 'Conditional phosphosites', 'Universal phosphosites']
 
-    print(f'conditional: {np.median(cond_relative)}')
-    print(f'universal: {np.median(univ_relative)}')
-    print(f'Non-phosphorylated S/T: {np.median(randomST_relative)}')
-
-    for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert', 'conditional']:
-        if db == 'sgd': 
-            psites = sgd
-        elif db == 'biogrid':
-            psites = biogrid
-        elif db == 'lanz70':
-            psites = lanz70
-        elif db == 'lanz90':
-            psites = lanz90
-        elif db == 'leutert':
-            psites = all_psites
-        elif db == 'conditional': 
-            psites = cond_psites
-        print(f'\n{db}')
-        all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
-        all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
-        db_relative = calculate_consurf_difference_psites(all_psites_dis_db, consurf, window_size=5)
-        all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_db, consurf)
-        print(f'{np.median(db_relative):.3f} of {len(db_relative)}')
-        dispensable = estimate_pi_mixture_model(randomST_relative, univ_relative, db_relative)
-        print(f'{dispensable:.2f}')
+    if not FigS1.is_file():
+        plot_consurf_difference(disordered_data, 
+                                labels, 
+                                FigS1,
+                                (-0.5, 0.2), 
+                                figFmt, 
+                                urge_positive=True)
 
 if __name__ == '__main__':
     main()

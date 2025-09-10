@@ -40,8 +40,8 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
-    Fig4A = paperDir / 'Figure 4A_diff.jpg'
-    Fig4B = paperDir / 'Figure 4B_diff.jpg'
+    Fig4A = paperDir / 'Figure 4A.jpg'
+    Fig4B = paperDir / 'Figure 4B.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -75,8 +75,8 @@ def main():
                                                         ['1', '2-4', '5-7', '8-10'], 
                                                         Fig4A, 
                                                         figFmt, 
-                                                        (-0.6, 0.05), 
-                                                        "Distribution of ConSurf score against number of perturbations\nin disordered regions")
+                                                        (-0.5, 0.05), 
+                                                        "Distribution of relative ConSurf score against number of perturbations\nin disordered regions")
 
     references_92_94 = []
     references_95_97 = []
@@ -103,8 +103,8 @@ def main():
                                                         ['92-94', '95-97', '98-100', '101'], 
                                                         Fig4B, 
                                                         figFmt, 
-                                                        (-0.6, 0.05), 
-                                                        "Distribution of ConSurf score against number of perturbations\nin disordered regions")
+                                                        (-0.5, 0.05), 
+                                                        "Distribution of relative ConSurf score against number of perturbations\nin disordered regions")
     
 if __name__ == '__main__':
     main()

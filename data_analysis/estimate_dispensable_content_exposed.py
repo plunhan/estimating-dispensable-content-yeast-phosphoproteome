@@ -106,33 +106,41 @@ def main():
     cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis_exp, consurf)
     univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis_exp, consurf)
 
-    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    # exclusions = ultradeep
+    exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
+    # exclusions = set()
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
-    randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
+    randomST_psites_dis_exp = retrieve_exposure_references(randomST_dis, sample_residues, aaInfo, RSAInfo, dRSAInfo)
+    randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_psites_dis_exp, consurf)
 
     disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
     labels = ['Random S/T', 'Conditional', 'Universal']
 
-    for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert']:
-        if db == 'sgd': 
-            psites = sgd
-        elif db == 'biogrid':
-            psites = biogrid
-        elif db == 'lanz70':
-            psites = lanz70
-        elif db == 'lanz90':
-            psites = lanz90
-        elif db == 'leutert':
-            psites = all_psites
-        print(db)
-        all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
-        all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
-        all_psites_dis_exp = retrieve_exposure_references(all_psites_dis_db, sample_residues, aaInfo, RSAInfo, dRSAInfo)
-        all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_exp, consurf)
-        print(f'{np.median(all_dis_consurf_db):.3f} of {len(all_dis_consurf_db)}')
-        dispensable = estimate_pi_mixture_model(cond_dis_consurf, univ_dis_consurf, all_dis_consurf_db)
-        print(f'{db}, {dispensable:.2f}, {(np.median(all_dis_consurf_db) - np.median(univ_dis_consurf))/(np.median(cond_dis_consurf) - np.median(univ_dis_consurf)):.2f}')
+    print(np.median(cond_dis_consurf))
+    print(np.median(univ_dis_consurf))
+    print(np.median(randomST_dis_consurf))
+    print(len(randomST_dis_consurf_references), len(randomST_dis_consurf))
+
+    # for db in ['sgd', 'biogrid', 'lanz70', 'lanz90', 'leutert']:
+    #     if db == 'sgd': 
+    #         psites = sgd
+    #     elif db == 'biogrid':
+    #         psites = biogrid
+    #     elif db == 'lanz70':
+    #         psites = lanz70
+    #     elif db == 'lanz90':
+    #         psites = lanz90
+    #     elif db == 'leutert':
+    #         psites = all_psites
+    #     print(db)
+    #     all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
+    #     all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
+    #     all_psites_dis_exp = retrieve_exposure_references(all_psites_dis_db, sample_residues, aaInfo, RSAInfo, dRSAInfo)
+    #     all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_exp, consurf)
+    #     print(f'{np.median(all_dis_consurf_db):.3f} of {len(all_dis_consurf_db)}')
+    #     dispensable = estimate_pi_mixture_model(cond_dis_consurf, univ_dis_consurf, all_dis_consurf_db)
+    #     print(f'{db}, {dispensable:.2f}, {(np.median(all_dis_consurf_db) - np.median(univ_dis_consurf))/(np.median(cond_dis_consurf) - np.median(univ_dis_consurf)):.2f}')
 
 if __name__ == '__main__':
     main()

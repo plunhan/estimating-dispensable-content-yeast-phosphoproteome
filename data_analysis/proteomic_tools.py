@@ -259,6 +259,14 @@ def parse_lanz(lanzFile: Union[str, Path],
     print(f"There are {len(references_mapped)} in Lanz's phosphoproteome.")
     return references_mapped
 
+def parse_phosphogrid_functional(PhosphoGIRDFile: Union[str, Path], 
+                                 IDMappingDict: dict[str, str]) -> set[str]:
+    df = pd.read_excel(PhosphoGIRDFile, skiprows=8)
+    df = df[(df['Function'] == 'Yes') & (df['S,T,Y'] != 'Y')]
+    df['Locus'] = df['SGD Gene'].map(IDMappingDict)
+    df['reference'] = df.apply(lambda row: f"{row['Locus']}_{row['S,T,Y']}{row['Residue #']}", axis=1)
+    return set(df['reference'])
+
 def retrieve_references_by_residue_type(references: set[str],
                                         aatype: set[str]) -> set[str]:
     '''
@@ -488,7 +496,7 @@ def calculate_consurf_difference_psite(reference: str,
         float: the average difference of ConSurf score. 
     '''
     systematic_name, site = reference.split('_')
-    if systematic_name not in consurf_d:
+    if systematic_name not in consurf_d or systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
         return None
     aa = site[0]
     position = int(site[1:])
@@ -578,6 +586,32 @@ def calculate_exposure_consurf(references: set[str],
     _, consurf_interfacial = retrieve_ConSurf_score(interfacial_psite, consurf_d)
     _, consurf_exposed = retrieve_ConSurf_score(exposed_psite, consurf_d)
     _, consurf_buried = retrieve_ConSurf_score(buried_psite, consurf_d)
+    return [('Interfacial', resType, np.median(consurf_interfacial), bootstrap_se(consurf_interfacial)), 
+            ('Exposed', resType, np.median(consurf_exposed), bootstrap_se(consurf_exposed)),
+            ('Buried', resType, np.median(consurf_buried), bootstrap_se(consurf_buried))]
+
+def calculate_exposure_consurf_alphafold(references, resType, consurf_d, rsa_alphafold, dRSAInfo, window_size=5): 
+    interfacial_psite = []
+    exposed_psite = []
+    buried_psite = []
+    for reference in references: 
+        systematic_name, site = reference.split('_')
+        if systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
+            continue
+        aa = site[0]
+        position = int(site[1:])
+        try: 
+            if dRSAInfo[systematic_name][position] > 0: 
+                interfacial_psite.append(reference)
+            elif rsa_alphafold[systematic_name][position] > 0.25: 
+                exposed_psite.append(reference)
+            elif rsa_alphafold[systematic_name][position] <= 0.25: 
+                buried_psite.append(reference)
+        except KeyError:
+            continue
+    consurf_interfacial = calculate_consurf_difference_psites(interfacial_psite, consurf_d, window_size)
+    consurf_exposed = calculate_consurf_difference_psites(exposed_psite, consurf_d, window_size)
+    consurf_buried = calculate_consurf_difference_psites(buried_psite, consurf_d, window_size)
     return [('Interfacial', resType, np.median(consurf_interfacial), bootstrap_se(consurf_interfacial)), 
             ('Exposed', resType, np.median(consurf_exposed), bootstrap_se(consurf_exposed)),
             ('Buried', resType, np.median(consurf_buried), bootstrap_se(consurf_buried))]

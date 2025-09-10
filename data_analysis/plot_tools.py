@@ -131,7 +131,7 @@ def plot_consurf_distribution(data_lists: list[list[float]],
     medians = [np.median(d) for d in data_lists]
     ses = [bootstrap_se(d) for d in data_lists]
 
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = plt.subplots(figsize=(7, 5))
     x_pos = np.arange(len(data_lists))
 
     ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
@@ -172,7 +172,7 @@ def plot_consurf_distribution_separate(data_lists: list[list[float]],
     medians = [np.median(d) for d in data_lists]
     ses = [bootstrap_se(d) for d in data_lists]
 
-    fig, ax = plt.subplots(figsize=(6, 3))
+    fig, ax = plt.subplots(figsize=(7, 3))
     x_pos = np.arange(len(data_lists))
 
     ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
@@ -213,12 +213,13 @@ def plot_consurf_difference(data_lists: list[list[float]],
                             group_names: list[str], 
                             outPath: Union[str, Path], 
                             ylims: tuple[float],
-                            fmt: str) -> None:
+                            fmt: str, 
+                            urge_positive=False) -> None:
 
     medians = [np.median(d) for d in data_lists]
     ses = [bootstrap_se(d) for d in data_lists]
 
-    fig, ax = plt.subplots(figsize=(6, 5))
+    fig, ax = plt.subplots(figsize=(7, 5))
     x_pos = np.arange(len(data_lists))
 
     ax.bar(x_pos, medians, yerr=ses, capsize=10, width=0.5, edgecolor='black', linewidth=1.2)
@@ -239,8 +240,8 @@ def plot_consurf_difference(data_lists: list[list[float]],
     ax.axhline(0, color='black', linestyle='-', linewidth=1)
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
-    ax.set_ylabel("Median ConSurf score of p-site relative to ajacent residues")
-    ax.set_title("ConSurf score of p-site relative to adjacent residues")
+    ax.set_ylabel("Median relative ConSurf score")
+    ax.set_title("Comparison of relative ConSurf score between different S/T sites")
     ax.set_ylim(ylims)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
@@ -254,7 +255,6 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
                                                     title) -> None:
     '''
     Plot distribution of ConSurf score against the number of perturbations. 
-    Perturbation bins: 1, 2-4, 5-7, 8-10
 
     Args: 
         references (set[str]): Set of references. 
@@ -276,7 +276,7 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
     ax.set_xlabel("Number of perturbations")
-    ax.set_ylabel("Median ConSurf score")
+    ax.set_ylabel("Median relative ConSurf score")
     ax.set_ylim(ylims)
     ax.set_title(title)
     # plt.tight_layout()
@@ -284,8 +284,47 @@ def plot_consurf_distribution_against_perturbations(data_lists: list[list[str]],
     plt.close()
 
 def plot_consurf_exposure(df: pd.DataFrame, 
+                          order: list[str],
                           outPath: Union[str, Path], 
-                          figFmt: str) -> None:
+                          figFmt: str, 
+                          ylims: tuple[float]=None) -> None:
+    _, ax = plt.subplots(figsize=(7, 5))
+    n_groups = 3
+    n_types = 3
+    bar_width = 0.8 / n_types
+    exposure_order = ['Interfacial', 'Exposed', 'Buried']
+
+    for i, t in enumerate(order):
+        sub = df[df['Type'] == t].set_index("Exposure")
+        heights, errors = [], []
+        for exp in exposure_order:
+            if exp in sub.index:
+                heights.append(float(sub.loc[exp, 'Median']))
+                errors.append(float(sub.loc[exp, 'Standard error']))
+            else:
+                heights.append(float("nan"))
+                errors.append(float("nan"))
+
+        x = [g + (i - (n_types - 1)/2) * bar_width for g in range(n_groups)]
+        ax.bar(x, heights, width=bar_width, yerr=errors, capsize=3, label=t, edgecolor="black")
+
+    ax.axhline(0, color='black', linestyle='-', linewidth=1)
+    if ylims is not None: 
+        ax.set_ylim(ylims)
+    ax.set_xticks(range(n_groups))
+    ax.set_xticklabels(exposure_order)
+    ax.set_xlabel("Exposure")
+    ax.set_title("Distribution of evolutionary conservation for residues with different exposure")
+    ax.set_xlabel("Residue exposure")
+    ax.set_ylabel("Median ConSurf score")
+    plt.legend(title="Residue type")
+    plt.savefig(outPath, dpi=300, format=figFmt)
+    plt.close()
+
+def plot_consurf_exposure_archived(df: pd.DataFrame, 
+                          outPath: Union[str, Path], 
+                          figFmt: str, 
+                          ylims: tuple[float]=None) -> None:
     plt.figure(figsize=(7, 5))
     ax = sns.barplot(
         data=df, 
@@ -307,7 +346,8 @@ def plot_consurf_exposure(df: pd.DataFrame,
                     ecolor='black', capsize=5, elinewidth=1)
 
     ax.axhline(0, color='black', linestyle='-', linewidth=1)
-
+    if ylims is not None: 
+        ax.set_ylim(ylims)
     ax.set_title("Distribution of evolutionary conservation for residues with different exposure")
     ax.set_xlabel("Residue exposure")
     ax.set_ylabel("Median ConSurf score")

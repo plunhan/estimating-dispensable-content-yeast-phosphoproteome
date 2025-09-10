@@ -37,6 +37,7 @@ def main():
     sequencePKL = paperDir / 'Scer_seq.pkl'
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
+    lanz90PKL = paperDir / 'lanz90.pkl'
 
     # output files
     Fig3A = paperDir / 'Figure 3A.jpg'
@@ -49,6 +50,7 @@ def main():
     sequences = pickle.load(open(sequencePKL, 'rb'))
     sgd = pickle.load(open(sgdPKL, 'rb'))
     biogrid = pickle.load(open(biogridPKL, 'rb'))
+    lanz90 = pickle.load(open(lanz90PKL, 'rb'))
 
     # Part I: difference between conditional and universal phosphosites
     cond_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 11)))
@@ -67,13 +69,17 @@ def main():
         cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis, consurf)
         univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
 
-        exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+        print(sample_residue)
+        print(f'Conditional: {len(cond_dis_consurf)}')
+        print(f'Universal: {len(univ_dis_consurf)}')
+
+        exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
         randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residue)
         randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
         randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_dis, consurf)
 
         disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
-        labels = ['Conditional phosphosites', 'Random S/T', 'Universal phosphosites']
+        labels = ['Conditional phosphosites', 'Non-phosphorylated S/T', 'Universal phosphosites']
 
         if sample_residue == 'S' and not Fig3A.is_file():
             plot_consurf_distribution_separate(disordered_data, 

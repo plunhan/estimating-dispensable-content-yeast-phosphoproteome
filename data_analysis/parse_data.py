@@ -21,7 +21,8 @@ from proteomic_tools import (parse_ultradeep,
                              parse_biogrid,
                              parse_lanz,
                              parse_functional_phosphosites, 
-                             parse_regulated_phosphosites)
+                             parse_regulated_phosphosites, 
+                             parse_phosphogrid_functional)
 
 def main():
 
@@ -54,6 +55,7 @@ def main():
     funcPhosFile = extDir / '41587_2021_1051_MOESM9_ESM.xlsx'
     lanzFile = extDir / 'embr202051121-phosphoproteome.xlsx'
     diffFile = LeutertDir / 'Differential expression all.xlsx'
+    PhosphoGIRDFile = extDir / 'PhosphoGRID_functional.xls'
 
     # output files
     ultradeepPKL = paperDir / 'ultradeep_reference_phosphoproteome.pkl'
@@ -67,6 +69,7 @@ def main():
     lanz70PKL = paperDir / 'lanz70.pkl'
     lanz90PKL = paperDir / 'lanz90.pkl'
     regPhosPKL = paperDir / 'reguPhos.pkl'
+    PhosphoGIRD_PKL = paperDir / 'PhosphoGIRD.pkl'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     IDMappingDict2 = map_gene_name_to_locus_id(IDMappingFile)
@@ -122,6 +125,10 @@ def main():
     if not regPhosPKL.is_file():
         regPhos = parse_regulated_phosphosites(diffFile)
         pickle.dump(regPhos, open(regPhosPKL, 'wb'))
+
+    if not PhosphoGIRD_PKL.is_file():
+        PhosphoGIRD = parse_phosphogrid_functional(PhosphoGIRDFile, IDMappingDict2)
+        pickle.dump(PhosphoGIRD, open(PhosphoGIRD_PKL, 'wb'))
 
 if __name__ == '__main__':
     main()

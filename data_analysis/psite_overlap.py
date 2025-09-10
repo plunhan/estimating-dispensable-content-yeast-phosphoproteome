@@ -43,10 +43,13 @@ def main():
 
     cond = set([reference for key, references in phosStres.items() for reference in references if key < 11])
     univ = set([reference for key, references in phosStres.items() for reference in references if key > 91])
+    cond_dis = retrieve_references_by_order(univ, diso, 'disordered')
+    univ_dis = retrieve_references_by_order(univ, diso, 'disordered')
     reg = pickle.load(open(regPhosPKL, 'rb'))
 
-    if not Fig1B.is_file(): 
-        plot_reg_overlap(cond, univ, reg, Fig1B, figFmt)
+    print(len(univ_dis))
+    print(len(cond_dis))
+    print(len(univ_dis))
 
 if __name__ == '__main__':
     main()

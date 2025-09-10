@@ -108,7 +108,7 @@ def main():
         all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_db, consurf)
         print(f'{np.median(db_relative):.3f} of {len(db_relative)}')
         dispensable = estimate_pi_mixture_model(randomST_relative, univ_relative, db_relative)
-        print(f'{dispensable:.2f}')
+        print(f'{dispensable:.3f}')
 
 if __name__ == '__main__':
     main()

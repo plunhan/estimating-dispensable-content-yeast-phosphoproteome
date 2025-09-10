@@ -14,13 +14,13 @@ from proteomic_tools import (get_phosphosites_given_perturbations,
 							 retrieve_references_by_order,
 							 retrieve_ConSurf_score, 
 							 sample_random_sites)
+from scipy.stats import ranksums
 
 def main(): 
 
     figFmt = 'jpg'
 
     sample_residues = 'ST'
-    # sample_residues = 'ACDEFGHIKLMNPQRSTVWY'
 
     dataDir = Path('../../data')
 
@@ -36,12 +36,13 @@ def main():
     consurfPKL = paperDir / 'consurf_all.pkl'
     disoPKL = paperDir / 'diso_all.pkl'
     sequencePKL = paperDir / 'Scer_seq.pkl'
+    lanz90PKL = paperDir / 'lanz90.pkl'
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
 
     # output files
-    Fig2A = paperDir / 'Figure 2A.jpg'
-    Fig2B = paperDir / 'Figure 2B.jpg'
+    Fig2C = paperDir / 'Figure 2C.jpg'
+    Fig2D = paperDir / 'Figure 2D.jpg'
 
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
@@ -50,17 +51,21 @@ def main():
     sequences = pickle.load(open(sequencePKL, 'rb'))
     sgd = pickle.load(open(sgdPKL, 'rb'))
     biogrid = pickle.load(open(biogridPKL, 'rb'))
+    lanz90 = pickle.load(open(lanz90PKL, 'rb'))
 
     # Part I: difference between conditional and universal phosphosites
     cond_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 11)))
     univ_psites = get_phosphosites_given_perturbations(phosStres, list(range(92, 102)))
+    intermediate_psites = get_phosphosites_given_perturbations(phosStres, list(range(11, 92)))
     all_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 102)))
 
     cond_psites_ST = retrieve_references_by_residue_type(cond_psites, sample_residues)
+    intermediate_psites_ST = retrieve_references_by_residue_type(intermediate_psites, sample_residues)
     univ_psites_ST = retrieve_references_by_residue_type(univ_psites, sample_residues)
     all_psites_ST = retrieve_references_by_residue_type(all_psites, sample_residues)
 
     cond_psites_dis = retrieve_references_by_order(cond_psites_ST, diso, 'disordered')
+    intermediate_psites_dis = retrieve_references_by_order(intermediate_psites_ST, diso, 'disordered')
     univ_psites_dis = retrieve_references_by_order(univ_psites_ST, diso, 'disordered')
     all_psites_dis = retrieve_references_by_order(all_psites_ST, diso, 'disordered')
     cond_psites_ord = retrieve_references_by_order(cond_psites_ST, diso, 'ordered')
@@ -68,14 +73,14 @@ def main():
     all_psites_ord = retrieve_references_by_order(all_psites_ST, diso, 'ordered')
 
     cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis, consurf)
+    intermediate_dis_consurf_references, intermediate_dis_consurf = retrieve_ConSurf_score(intermediate_psites_dis, consurf)
     univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis, consurf)
     cond_ord_consurf_references, cond_ord_consurf = retrieve_ConSurf_score(cond_psites_ord, consurf)
     univ_ord_consurf_references, univ_ord_consurf = retrieve_ConSurf_score(univ_psites_ord, consurf)
     all_ord_consurf_references, all_ord_consurf = retrieve_ConSurf_score(all_psites_ord, consurf)
     all_dis_consurf_references, all_dis_consurf = retrieve_ConSurf_score(all_psites_dis, consurf)
 
-    exclusions = ultradeep # p-sites reported by this phosphoproteome
-    exclusions = ultradeep.union(sgd, biogrid) # All reported p-sites
+    exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
     randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
     randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
@@ -84,27 +89,26 @@ def main():
 
     ordered_data = [cond_ord_consurf, randomST_ord_consurf, univ_ord_consurf]
     disordered_data = [cond_dis_consurf, randomST_dis_consurf, univ_dis_consurf]
-    labels = ['Conditional phosphosites', 'Random S/T', 'Universal phosphosites']
+    labels = ['Conditional phosphosites', 'Non-phosphorylated S/T', 'Universal phosphosites']
 
-    print(np.median(cond_dis_consurf))
-    print(np.median(univ_dis_consurf))
-    print(np.median(randomST_dis_consurf))
-    print(np.median(all_dis_consurf))
+    print(ranksums(cond_dis_consurf, univ_dis_consurf))
+    print(ranksums(randomST_dis_consurf, univ_dis_consurf))
+    print(ranksums(cond_dis_consurf, randomST_dis_consurf))
 
-    if not Fig2A.is_file():
+    if not Fig2C.is_file():
         plot_consurf_distribution(ordered_data, 
                                   labels, 
-                                  Fig2A, 
+                                  Fig2C, 
                                   figFmt, 
                                   'ordered', 
                                   0.05, 
                                   (-0.45, 0.25),
                                   urge_positive=True)
 
-    if not Fig2B.is_file():
+    if not Fig2D.is_file():
         plot_consurf_distribution(disordered_data, 
                                   labels, 
-                                  Fig2B, 
+                                  Fig2D, 
                                   figFmt, 
                                   'disordered', 
                                   0.05,

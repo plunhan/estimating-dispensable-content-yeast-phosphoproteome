@@ -73,7 +73,7 @@ def main():
     rsa_alphafold_pkl = paperDir / 'rsa_alphafold.pkl'
 
     # output files
-    Fig6A = paperDir / f'Figure 6A_diff.jpg'
+    Fig6A = paperDir / f'Figure 6A.jpg'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
@@ -121,7 +121,8 @@ def main():
             df_ls.extend(rows)
 
     df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
-    plot_consurf_exposure(df, Fig6A, figFmt)
+    order = ['Non-phosphorylated S/T', 'Conditional phosphosites', 'Universal phosphosites']
+    plot_consurf_exposure(df, order, Fig6A, figFmt, (-0.5, 0.3))
 
 if __name__ == '__main__':
     main()
