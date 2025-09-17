@@ -71,7 +71,6 @@ def main():
     print(f'Universal: {np.median(univ_diff_dis)}')
     _, pvalue = ranksums(cond_diff_dis, univ_diff_dis)
     print(pvalue)
-
     
     # Ordered regions are not considered, but here is the code. 
     cond_psites_ord = retrieve_references_by_order(cond_psites_ST, diso, 'ordered')

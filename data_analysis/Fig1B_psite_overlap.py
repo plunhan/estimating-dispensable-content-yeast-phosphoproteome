@@ -33,9 +33,6 @@ def main():
     biogridPKL = paperDir / 'BioGRID.pkl'
     regPhosPKL = paperDir / 'reguPhos.pkl'
 
-    # output files
-    Fig1B = paperDir / 'Figure 1B.jpg'
-
     phosStres = pickle.load(open(phosStresPKL, 'rb'))
     phosStres = {key: retrieve_references_by_residue_type(references, resType) for key, references in phosStres.items()}
     # phosStres_ord = {key: retrieve_references_by_order(references, diso, 'ordered') for key, references in phosStres.items()}
@@ -43,13 +40,10 @@ def main():
 
     cond = set([reference for key, references in phosStres.items() for reference in references if key < 11])
     univ = set([reference for key, references in phosStres.items() for reference in references if key > 91])
-    cond_dis = retrieve_references_by_order(univ, diso, 'disordered')
-    univ_dis = retrieve_references_by_order(univ, diso, 'disordered')
     reg = pickle.load(open(regPhosPKL, 'rb'))
 
-    print(len(univ_dis))
-    print(len(cond_dis))
-    print(len(univ_dis))
-
+    print(len(cond.intersection(reg)))
+    print(len(univ.intersection(reg)))
+    
 if __name__ == '__main__':
     main()
