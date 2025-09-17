@@ -155,9 +155,9 @@ def plot_consurf_distribution(data_lists: list[list[float]],
         ax.axhline(0, color='black', linestyle='-', linewidth=1)
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
-    ax.set_ylabel("Median ConSurf score")
+    ax.set_ylabel("Median evolutionary rate")
     ax.set_ylim(ylims)
-    ax.set_title(f"Comparison of median ConSurf score in {title} regions")
+    ax.set_title(f"Comparison of median evolutionary rate in {title} regions")
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
     plt.close()
@@ -214,6 +214,7 @@ def plot_consurf_difference(data_lists: list[list[float]],
                             outPath: Union[str, Path], 
                             ylims: tuple[float],
                             fmt: str, 
+                            region: str,
                             urge_positive=False) -> None:
 
     medians = [np.median(d) for d in data_lists]
@@ -240,8 +241,8 @@ def plot_consurf_difference(data_lists: list[list[float]],
     ax.axhline(0, color='black', linestyle='-', linewidth=1)
     ax.set_xticks(x_pos)
     ax.set_xticklabels(group_names)
-    ax.set_ylabel("Median relative ConSurf score")
-    ax.set_title("Comparison of relative ConSurf score between different S/T sites")
+    ax.set_ylabel("Median relative evolutionary rate")
+    ax.set_title(f"Comparison of relative evolutionary rate between different\nS/T sites in {region} regions")
     ax.set_ylim(ylims)
     # plt.tight_layout()
     plt.savefig(outPath, format=fmt, dpi=300)
@@ -287,6 +288,7 @@ def plot_consurf_exposure(df: pd.DataFrame,
                           order: list[str],
                           outPath: Union[str, Path], 
                           figFmt: str, 
+                          region: str, 
                           ylims: tuple[float]=None) -> None:
     _, ax = plt.subplots(figsize=(7, 5))
     n_groups = 3
@@ -314,9 +316,9 @@ def plot_consurf_exposure(df: pd.DataFrame,
     ax.set_xticks(range(n_groups))
     ax.set_xticklabels(exposure_order)
     ax.set_xlabel("Exposure")
-    ax.set_title("Distribution of evolutionary conservation for residues with different exposure")
+    ax.set_title(f"Distribution of relative evolutionary rate for residues with different\nresidue burial in {region} regions")
     ax.set_xlabel("Residue exposure")
-    ax.set_ylabel("Median ConSurf score")
+    ax.set_ylabel("Median relative evolutionary rate")
     plt.legend(title="Residue type")
     plt.savefig(outPath, dpi=300, format=figFmt)
     plt.close()

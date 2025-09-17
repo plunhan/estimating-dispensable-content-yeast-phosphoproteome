@@ -97,7 +97,7 @@ def main():
 
     ordered_data = [cond_ord_consurf, randomST_ord_consurf, univ_ord_consurf]
     disordered_data = [randomST_relative, cond_relative, univ_relative]
-    labels = ['Non-phosphorylated S/T', 'Conditional phosphosites', 'Universal phosphosites']
+    labels = ['Non-phosphorylated S/T sites', 'Conditional phosphosites', 'Universal phosphosites']
 
     if not FigS1.is_file():
         plot_consurf_difference(disordered_data, 
@@ -105,6 +105,7 @@ def main():
                                 FigS1,
                                 (-0.5, 0.2), 
                                 figFmt, 
+                                'disordered',
                                 urge_positive=True)
 
 if __name__ == '__main__':

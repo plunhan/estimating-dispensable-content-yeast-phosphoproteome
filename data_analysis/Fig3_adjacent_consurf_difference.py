@@ -1,13 +1,3 @@
-'''
-Calculate the difference of ConSurf score between a residue and its adjacent residues (+2, +1, -1, and -2)
-
-Comparison of evolutionary rate between:
-   Conditional phosphosites
-   Universal phosphosites
-   Random S/T
-   Random S/T that never been reported by any phosphoproteome
-'''
-
 import os
 import pickle
 import matplotlib.pyplot as plt
@@ -44,6 +34,7 @@ def main():
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
     lanz90PKL = paperDir / 'lanz90.pkl'
+    regPhosPKL = paperDir / 'reguPhos.pkl'
 
     # output files
     randomST_dis_consurf_distribution = paperDir / 'randomST_dis_consurf_distribution.jpg'
@@ -58,6 +49,7 @@ def main():
     sgd = pickle.load(open(sgdPKL, 'rb'))
     biogrid = pickle.load(open(biogridPKL, 'rb'))
     lanz90 = pickle.load(open(lanz90PKL, 'rb'))
+    reg = pickle.load(open(regPhosPKL, 'rb'))
 
     # Part I: difference between conditional and universal phosphosites
     cond_psites = get_phosphosites_given_perturbations(phosStres, list(range(1, 11)))
@@ -103,9 +95,13 @@ def main():
     randomST_diff_ord = calculate_consurf_difference_psites(randomST_ord, consurf, window_size)
     print(np.median(randomST_diff_ord))
 
+    print(ranksums(cond_diff_dis, univ_diff_dis))
+    print(ranksums(randomST_diff_dis, univ_diff_dis))
+    print(ranksums(cond_diff_dis, randomST_diff_dis))
+
     ordered_data = [randomST_diff_ord, cond_diff_ord, univ_diff_ord]
     disordered_data = [randomST_diff_dis, cond_diff_dis, univ_diff_dis]
-    labels = ['Non-phosphorylated S/T', 'Conditional phosphosites', 'Universal phosphosites']
+    labels = ['Non-phosphorylated S/T sites', 'Conditional phosphosites', 'Universal phosphosites']
 
     print(ranksums(randomST_diff_ord, cond_diff_ord))
     print(ranksums(univ_diff_ord, randomST_diff_ord))
@@ -116,14 +112,24 @@ def main():
                                 labels, 
                                 Fig3, 
                                 (-0.4, 0.15),
-                                figFmt)
+                                figFmt, 
+                                'disordered')
 
     if not FigS2B.is_file():
         plot_consurf_difference(ordered_data, 
                                 labels, 
                                 FigS2B, 
                                 (-0.15, 0.15),
-                                figFmt)
+                                figFmt, 
+                                'ordered')
+
+    # Test the difference in relative evolutionary rate between universal versus regulated phosphosites in disordered regions
+    reg_ST = retrieve_references_by_residue_type(reg, sample_residues)
+    reg_dis = retrieve_references_by_order(reg_ST, diso, 'disordered')
+    reg_diff_dis = calculate_consurf_difference_psites(reg_dis, consurf, window_size)
+    print(f'univ: {np.median(univ_diff_dis)}')
+    print(f'reg: {np.median(reg_diff_dis)}')
+    print(ranksums(univ_diff_dis, reg_diff_dis))
     
 if __name__ == '__main__':
     main()

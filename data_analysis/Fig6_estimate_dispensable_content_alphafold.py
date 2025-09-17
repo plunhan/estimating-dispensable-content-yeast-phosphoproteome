@@ -1,23 +1,16 @@
-'''
-Estimate fraction of functionally dispensable p-sites in phosphoproteomes. 
-'''
-
 import numpy as np
 import os
-import pandas as pd
 import pickle
 from estimate_tools import estimate_pi_mixture_model
 from lib_import_tools import map_protein_id_to_locus_id
 from pathlib import Path
-from plot_tools import plot_consurf_exposure
 from proteomic_tools import (get_phosphosites_given_perturbations, 
 							 retrieve_references_by_order, 
 							 retrieve_references_by_residue_type, 
 							 retrieve_ConSurf_score,
                              retrieve_exposure_references, 
 							 sample_random_sites, 
-                             calculate_exposure_consurf_alphafold)
-from scipy.stats import ranksums
+                             calculate_consurf_difference_psites)
 
 def retrieve_exposure_references_alphafold(references, rsa_alphafold, dRSAInfo):
     result_set = set()
@@ -87,12 +80,8 @@ def main():
     sgdPKL = paperDir / 'SGD.pkl'
     biogridPKL = paperDir / 'BioGRID.pkl'
     lanz90PKL = paperDir / 'lanz90.pkl'
-    lanz70PKL = paperDir / 'lanz70.pkl'
     rsa_pkl = procDir / 'RSA_dicts.pkl'
     rsa_alphafold_pkl = paperDir / 'rsa_alphafold.pkl'
-
-    # output files
-    FigS2C = paperDir / 'Figure S2C.jpg'
 
     IDMappingDict = map_protein_id_to_locus_id(IDMappingFile)
     ultradeep = pickle.load(open(ultradeepPKL, 'rb'))
@@ -116,50 +105,54 @@ def main():
     univ_psites_ST = retrieve_references_by_residue_type(univ_psites, sample_residues)
     all_psites_ST = retrieve_references_by_residue_type(all_psites, sample_residues)
 
-    cond_psites_ord = retrieve_references_by_order(cond_psites_ST, diso, 'ordered')
-    univ_psites_ord = retrieve_references_by_order(univ_psites_ST, diso, 'ordered')
-    all_psites_ord = retrieve_references_by_order(all_psites_ST, diso, 'ordered')
+    cond_psites_dis = retrieve_references_by_order(cond_psites_ST, diso, 'disordered')
+    univ_psites_dis = retrieve_references_by_order(univ_psites_ST, diso, 'disordered')
+    all_psites_dis = retrieve_references_by_order(all_psites_ST, diso, 'disordered')
 
-    cond_psites_ord_exp = retrieve_exposure_references_alphafold(cond_psites_ord, rsa_alphafold, dRSAInfo)
-    univ_psites_ord_exp = retrieve_exposure_references_alphafold(univ_psites_ord, rsa_alphafold, dRSAInfo)
+    cond_psites_dis_exp = retrieve_exposure_references_alphafold(cond_psites_dis, rsa_alphafold, dRSAInfo)
+    univ_psites_dis_exp = retrieve_exposure_references_alphafold(univ_psites_dis, rsa_alphafold, dRSAInfo)
 
-    cond_ord_consurf_references, cond_ord_consurf = retrieve_ConSurf_score(cond_psites_ord_exp, consurf)
-    univ_ord_consurf_references, univ_ord_consurf = retrieve_ConSurf_score(univ_psites_ord_exp, consurf)
+    cond_relative = calculate_consurf_difference_psites(cond_psites_dis_exp, consurf, window_size=5)
+    univ_relative = calculate_consurf_difference_psites(univ_psites_dis_exp, consurf, window_size=5)
+
+    cond_dis_consurf_references, cond_dis_consurf = retrieve_ConSurf_score(cond_psites_dis_exp, consurf)
+    univ_dis_consurf_references, univ_dis_consurf = retrieve_ConSurf_score(univ_psites_dis_exp, consurf)
 
     exclusions = ultradeep.union(sgd, biogrid, lanz90) # All reported p-sites
     randomST = sample_random_sites(ultradeep, exclusions, sequences, sample_residues)
-    randomST_ord = retrieve_references_by_order(randomST, diso, 'ordered')
-    randomST_psites_ord_exp = retrieve_exposure_references_alphafold(randomST_ord, rsa_alphafold, dRSAInfo)
-    randomST_ord_consurf_references, randomST_ord_consurf = retrieve_ConSurf_score(randomST_psites_ord_exp, consurf)
+    randomST_dis = retrieve_references_by_order(randomST, diso, 'disordered')
+    randomST_psites_dis_exp = retrieve_exposure_references_alphafold(randomST_dis, rsa_alphafold, dRSAInfo)
+    randomST_relative = calculate_consurf_difference_psites(randomST_psites_dis_exp, consurf, window_size=5)
+    randomST_dis_consurf_references, randomST_dis_consurf = retrieve_ConSurf_score(randomST_psites_dis_exp, consurf)
 
-    disordered_data = [cond_ord_consurf, randomST_ord_consurf, univ_ord_consurf]
-    labels = ['Non-phosphorylated S/T', 'Conditional', 'Universal']
+    disordered_data = [cond_relative, randomST_relative, univ_relative]
+    labels = ['Random S/T', 'Conditional', 'Universal']
 
-    print(np.median(cond_ord_consurf))
-    print(np.median(univ_ord_consurf))
-    print(np.median(randomST_ord_consurf))
-    print(ranksums(cond_ord_consurf, univ_ord_consurf))
-    print(ranksums(randomST_ord_consurf, univ_ord_consurf))
-    print(ranksums(cond_ord_consurf, randomST_ord_consurf))
+    print(np.median(cond_relative))
+    print(np.median(univ_relative))
+    print(np.median(randomST_relative))
+    print(len(randomST_dis_consurf_references), len(randomST_dis_consurf))
 
-    df_ls = []
-    for i, references in enumerate([randomST_ord, cond_psites_ord, univ_psites_ord]): 
-        if i == 0: 
-            resType = "Non-phosphorylated S/T sites"
-        elif i == 1: 
-            resType = "Conditional phosphosites"
-        else: 
-            resType = "Universal phosphosites"
-        rows = calculate_exposure_consurf_alphafold(references, resType, consurf, rsa_alphafold, dRSAInfo)
-        if i == 1:
-            df_ls = rows + df_ls
-        else:
-            df_ls.extend(rows)
-
-    df = pd.DataFrame(df_ls, columns=['Exposure', 'Type', 'Median', 'Standard error'])
-    print(df)
-    order = ['Non-phosphorylated S/T sites', 'Conditional phosphosites', 'Universal phosphosites']
-    plot_consurf_exposure(df, order, FigS2C, figFmt, 'ordered', (-0.2, 0.2))
+    for db in ['sgd', 'biogrid', 'lanz90', 'leutert', 'conditional']:
+        if db == 'sgd': 
+            psites = sgd
+        elif db == 'biogrid':
+            psites = biogrid
+        elif db == 'lanz90':
+            psites = lanz90
+        elif db == 'leutert':
+            psites = all_psites
+        elif db == 'conditional':
+            psites = cond_psites
+        print(db)
+        all_psites_ST_db = retrieve_references_by_residue_type(psites, sample_residues)
+        all_psites_dis_db = retrieve_references_by_order(all_psites_ST_db, diso, 'disordered')
+        all_psites_dis_exp = retrieve_exposure_references_alphafold(all_psites_dis_db, rsa_alphafold, dRSAInfo)
+        db_relative = calculate_consurf_difference_psites(all_psites_dis_exp, consurf, window_size=5)
+        all_dis_consurf_references_db, all_dis_consurf_db = retrieve_ConSurf_score(all_psites_dis_exp, consurf)
+        print(f'{np.median(db_relative):.3f} of {len(db_relative)}')
+        dispensable = estimate_pi_mixture_model(randomST_relative, univ_relative, db_relative)
+        print(f'{dispensable:.3f}')
 
 if __name__ == '__main__':
     main()

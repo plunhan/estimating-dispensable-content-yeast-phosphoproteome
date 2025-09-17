@@ -1,9 +1,3 @@
-'''
-ConSurf score distribution among conditional p-sites with number of
-perturbations 1, 2-4, 5-7, 8-10. 
-Corresponds to Figure 3B
-'''
-
 import numpy as np
 import os
 import pandas as pd
@@ -76,7 +70,7 @@ def main():
                                                         Fig4A, 
                                                         figFmt, 
                                                         (-0.5, 0.05), 
-                                                        "Distribution of relative ConSurf score against number of perturbations\nin disordered regions")
+                                                        "Distribution of relative ConSurf score against number of\nperturbations in disordered regions")
 
     references_92_94 = []
     references_95_97 = []
@@ -91,10 +85,18 @@ def main():
             references_95_97.extend(phosStres[i])
         elif 98 <= i <= 100: 
             references_98_100.extend(phosStres[i])
+
+    from scipy.stats import ranksums
+
     data_lists_univ = [references_92_94, references_95_97, references_98_100, references_101]
     data_lists_univ = [retrieve_references_by_residue_type(l, sample_residues) for l in data_lists_univ]
     data_lists_univ_dis = [retrieve_references_by_order(l, diso, 'disordered') for l in data_lists_univ]
     data_lists_univ_dis = [calculate_consurf_difference_psites(l, consurf, window_size=5) for l in data_lists_univ_dis]
+
+    for i in range(4):
+        for j in range(i+1, 4):
+            print(i, j)
+            print(ranksums(data_lists_cond_dis[i], data_lists_cond_dis[j]))
 
     print([np.median(l) for l in data_lists_univ_dis])
 
@@ -104,7 +106,7 @@ def main():
                                                         Fig4B, 
                                                         figFmt, 
                                                         (-0.5, 0.05), 
-                                                        "Distribution of relative ConSurf score against number of perturbations\nin disordered regions")
+                                                        "Distribution of relative ConSurf score against number of\nperturbations in disordered regions")
     
 if __name__ == '__main__':
     main()

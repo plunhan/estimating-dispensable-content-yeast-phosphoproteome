@@ -615,3 +615,25 @@ def calculate_exposure_consurf_alphafold(references, resType, consurf_d, rsa_alp
     return [('Interfacial', resType, np.median(consurf_interfacial), bootstrap_se(consurf_interfacial)), 
             ('Exposed', resType, np.median(consurf_exposed), bootstrap_se(consurf_exposed)),
             ('Buried', resType, np.median(consurf_buried), bootstrap_se(consurf_buried))]
+
+def calculate_exposed_relative(references, consurf_d, rsa_alphafold, dRSAInfo, window_size=5): 
+    interfacial_psite = []
+    exposed_psite = []
+    buried_psite = []
+    for reference in references: 
+        systematic_name, site = reference.split('_')
+        if systematic_name in ['YKL021C', 'YDR098C', 'YMR112C']:
+            continue
+        aa = site[0]
+        position = int(site[1:])
+        try: 
+            if dRSAInfo[systematic_name][position] > 0: 
+                interfacial_psite.append(reference)
+            elif rsa_alphafold[systematic_name][position] > 0.25: 
+                exposed_psite.append(reference)
+            elif rsa_alphafold[systematic_name][position] <= 0.25: 
+                buried_psite.append(reference)
+        except KeyError:
+            continue
+    consurf_exposed = calculate_consurf_difference_psites(exposed_psite, consurf_d, window_size)
+    return consurf_exposed
